@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XTH-Task</title>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <table id="postTable" class="display" style="width:100%">
+        <thead>
+            <tr>
+                <th>User ID</th>
+                <th>Post ID</th>
+                <th>Title</th>
+                <th>Body</th>
+                <th>Name</th>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Address</th>
+                <th>Phone</th>
+                <th>Website</th>
+                <th>Company</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+            <span onclick="closeModal()" class="close">&times;</span>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script defer>
+        async function loadData() {
+            try {
+                const postsResponse = await fetch('https://jsonplaceholder.typicode.com/posts');
+                const posts = await postsResponse.json();
+
+                const usersResponse = await fetch('https://jsonplaceholder.typicode.com/users');
+                const users = await usersResponse.json();
+
+                posts.forEach(post => {
+                    const user = users.find(user => user.id === post.userId);
+                    const tableRow = document.createElement('tr');
+                    tableRow.id = `${post.id}`
+                    tableRow.innerHTML = `
+                    <td>${post.userId}</td>
+                    <td>${post.id}</td>
+                    <td>${post.title}</td>
+                    <td>${post.body}</td>
+                    <td>${user.name}</td>
+                    <td>${user.username}</td>
+                    <td>${user.email}</td>
+                    <td>${user.address.city}, ${user.address.street}, ${user.address.suite}, ${user.address.zipcode}</td>
+                    <td>${user.phone}</td>
+                    <td>${user.website}</td>
+                    <td>${user.company.name}, ${user.company.catchPhrase}, ${user.company.bs}</td>
+                    <td>
+                        <button onclick="deletePost('${post.id}')">delete</button>
+                    </td>
+                    `;
+                    document.querySelector('#postTable tbody').appendChild(tableRow);
+                });
+
+                $('#postTable tbody').on('click', 'tr', function () {
+                    const postId = $(this).attr('id')
+                    const viewPostData = posts.find(item => parseInt(item.id) === parseInt(postId))
+                    const user = users.find(user => {
+                        return user.id === parseInt(postId)
+                    })
+                    const allData = { ...viewPostData, ...user, company: `${user.company.name}, ${user.company.catchPhrase}, ${user.company.bs}`, address: `${user.address.city}, ${user.address.street}, ${user.address.suite}, ${user.address.zipcode}` }
+                    for (let key in allData) {
+                        const container = document.createElement('div');
+                        container.classList.add('data-container');
+
+                        const label = document.createElement('div');
+                        label.textContent = key + ': ';
+                        label.classList.add('data-label');
+
+                        const value = document.createElement('div');
+                        value.textContent = allData[key];
+                        value.classList.add('data-value');
+
+                        container.appendChild(label);
+                        container.appendChild(value);
+
+                        document.getElementById("modal-body").appendChild(container);
+                    }
+                    $('#myModal').show()
+                });
+
+                $('#postTable').DataTable();
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        }
+        loadData()
+        function closeModal() {
+            $('#myModal').hide()
+            $("#modal-body").empty()
+        }
+        function deletePost(postID) {
+            document.getElementById(postID).remove()
+        }
+    </script>
+</body>
+
+</html>
